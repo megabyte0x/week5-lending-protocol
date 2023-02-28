@@ -12,9 +12,9 @@ error MaticBorrow();
 error USDTBorrow();
 
 contract Lending is Ownable {
-    IERC20 wETH;
-    IERC20 usdt;
-    IERC20 matic;
+    IERC20 public wETH;
+    IERC20 public usdt;
+    IERC20 public matic;
 
     AggregatorV3Interface internal immutable wETHPriceFeed =
         AggregatorV3Interface(0xF9680D99D6C9589e2a93a78A04A279e509205945);
