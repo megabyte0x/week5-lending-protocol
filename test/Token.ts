@@ -39,4 +39,28 @@ describe("Tokens", function () {
     await usdt.connect(user1).mint(amountOfToken);
     expect(await usdt.balanceOf(user1.address)).to.equal(amountOfToken);
   });
+
+  it("Should approve the token to an address", async function () {
+    const { user1, user2, matic, weth, usdt, amountOfToken } =
+      await loadFixture(fixture);
+
+    // Approve WETH
+    await weth.connect(user1).approve(user2.address, amountOfToken);
+
+    // Approve MATIC
+    await matic.connect(user1).approve(user2.address, amountOfToken);
+
+    // Approve USDT
+    await usdt.connect(user1).approve(user2.address, amountOfToken);
+
+    expect(await weth.allowance(user1.address, user2.address)).to.equal(
+      amountOfToken
+    );
+    expect(await matic.allowance(user1.address, user2.address)).to.equal(
+      amountOfToken
+    );
+    expect(await usdt.allowance(user1.address, user2.address)).to.equal(
+      amountOfToken
+    );
+  });
 });
