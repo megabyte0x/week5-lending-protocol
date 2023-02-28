@@ -6,7 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
+import "hardhat/console.sol";
+
 error ZeroValue();
+error ETHDeposit();
 error NotEnoughCollateralized();
 error MaticBorrow();
 error USDTBorrow();
@@ -27,7 +30,7 @@ contract Lending is Ownable {
         uint256 amount;
     }
 
-    struct EthData {
+    struct WEthData {
         uint256 amountDeposited;
         uint256 collateralAmount;
         uint256 collateralAmountClaimed;
@@ -44,11 +47,11 @@ contract Lending is Ownable {
         uint256 borrowedAmount;
     }
 
-    mapping(address => EthData) ethDepositDetails;
-    mapping(address => MaticData) maticDepositDetails;
-    mapping(address => UsdtData) usdtDepositDetails;
+    mapping(address => WEthData) wethDepositDetails;
+    mapping(address => MaticData) maticBorrowDetails;
+    mapping(address => UsdtData) usdtBorrowDetails;
 
-    event ETHDeposited(address indexed user, uint256 indexed amount);
+    event WETHDeposited(address indexed user, uint256 indexed amount);
 
     event MaticBorrowed(address indexed user, uint256 indexed amount);
 
@@ -68,58 +71,53 @@ contract Lending is Ownable {
         usdt = IERC20(_usdt);
     }
 
-    function depositETH() external payable {
+    function depositWETH() external payable {
         uint256 value = msg.value;
         if (msg.value == 0) revert ZeroValue();
 
-        EthData memory ethDataDetails = ethDepositDetails[msg.sender];
+        wETH.transferFrom(msg.sender, address(this), value);
 
-        ethDataDetails.amountDeposited += value;
-        ethDataDetails.collateralAmount += calculateCollateral(value);
-        ethDataDetails.collateralAmountUnclaimed += calculateCollateral(value);
+        WEthData storage wethDataDetails = wethDepositDetails[msg.sender];
 
-        emit ETHDeposited(msg.sender, value);
+        wethDepositDetails[msg.sender].amountDeposited += value;
+        wethDataDetails.collateralAmount += calculateCollateral(value);
+        wethDataDetails.collateralAmountUnclaimed += calculateCollateral(value);
+
+        emit WETHDeposited(msg.sender, value);
     }
 
     function borrowMatic(uint256 amount) external payable {
-        EthData memory _ethData = ethDepositDetails[msg.sender];
+        WEthData memory _ethData = wethDepositDetails[msg.sender];
         uint256 amountValueInUSD = amount * getMaticLatestPrice();
         uint256 collateralValueInUSD = _ethData.collateralAmountUnclaimed *
-            getETHLatestPrice();
+            getWETHLatestPrice();
 
         if (amountValueInUSD > collateralValueInUSD)
             revert NotEnoughCollateralized();
 
-        uint256 ethClaimed = amountValueInUSD / getETHLatestPrice();
-        _ethData.collateralAmountClaimed += ethClaimed;
-        _ethData.collateralAmountUnclaimed -= ethClaimed;
+        uint256 wethClaimed = amountValueInUSD / getWETHLatestPrice();
+        _ethData.collateralAmountClaimed += wethClaimed;
+        _ethData.collateralAmountUnclaimed -= wethClaimed;
 
-        MaticData memory _maticData = maticDepositDetails[msg.sender];
+        MaticData memory _maticData = maticBorrowDetails[msg.sender];
         _maticData.borrowedAmount += amount;
         _maticData.valueInUSD += amountValueInUSD;
 
-        (bool success, ) = address(matic).call(
-            abi.encodeWithSignature(
-                "transfer(address,uint256)",
-                msg.sender,
-                amount
-            )
-        );
-        if (!success) revert MaticBorrow();
+        matic.transferFrom(address(this), msg.sender, amount);
     }
 
     function borrowUSDT(uint256 amount) external payable {
-        EthData memory _ethData = ethDepositDetails[msg.sender];
-        uint256 collateralValueInUSD = _ethData.collateralAmountUnclaimed *
-            getETHLatestPrice();
+        WEthData memory _wethData = wethDepositDetails[msg.sender];
+        uint256 collateralValueInUSD = _wethData.collateralAmountUnclaimed *
+            getWETHLatestPrice();
 
         if (amount > collateralValueInUSD) revert NotEnoughCollateralized();
 
-        uint256 ethClaimed = amount / getETHLatestPrice();
-        _ethData.collateralAmountClaimed += ethClaimed;
-        _ethData.collateralAmountUnclaimed -= ethClaimed;
+        uint256 ethClaimed = amount / getWETHLatestPrice();
+        _wethData.collateralAmountClaimed += ethClaimed;
+        _wethData.collateralAmountUnclaimed -= ethClaimed;
 
-        UsdtData memory _usdtData = usdtDepositDetails[msg.sender];
+        UsdtData memory _usdtData = usdtBorrowDetails[msg.sender];
         _usdtData.borrowedAmount += amount;
         _usdtData.valueInUSD += amount;
 
@@ -133,13 +131,23 @@ contract Lending is Ownable {
         if (!success) revert USDTBorrow();
     }
 
-    function calculateCollateral(
-        uint256 value
-    ) internal pure returns (uint256) {
+    function calculateCollateral(uint256 value) public pure returns (uint256) {
         return (value * 7) / 10;
     }
 
-    function getETHLatestPrice() internal view returns (uint80) {
+    function getWETHDepositDetails() public view returns (WEthData memory) {
+        return wethDepositDetails[msg.sender];
+    }
+
+    function getMaticDepositDetails() public view returns (MaticData memory) {
+        return maticBorrowDetails[msg.sender];
+    }
+
+    function getUSDTDepositDetails() public view returns (UsdtData memory) {
+        return usdtBorrowDetails[msg.sender];
+    }
+
+    function getWETHLatestPrice() public view returns (uint80) {
         (
             uint80 roundId,
             int256 price,
@@ -150,7 +158,7 @@ contract Lending is Ownable {
         return answeredInRound;
     }
 
-    function getMaticLatestPrice() internal view returns (uint80) {
+    function getMaticLatestPrice() public view returns (uint80) {
         (
             uint80 roundId,
             int256 price,
