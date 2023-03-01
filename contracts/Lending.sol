@@ -19,10 +19,10 @@ contract Lending is Ownable {
     IERC20 public usdt;
     IERC20 public matic;
 
-    AggregatorV3Interface internal immutable wETHPriceFeed =
-        AggregatorV3Interface(0xF9680D99D6C9589e2a93a78A04A279e509205945);
-    AggregatorV3Interface internal immutable maticPriceFeed =
-        AggregatorV3Interface(0xAB594600376Ec9fD91F8e885dADF0CE036862dE0);
+    AggregatorV3Interface internal wETHPriceFeed =
+        AggregatorV3Interface(0x0715A7794a1dc8e42615F059dD6e406A6594651A);
+    AggregatorV3Interface internal maticPriceFeed =
+        AggregatorV3Interface(0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada);
 
     struct Deposit {
         address user;
@@ -63,8 +63,8 @@ contract Lending is Ownable {
         matic = IERC20(_matic);
     }
 
-    function setETHAddress(address _eth) external onlyOwner {
-        wETH = IERC20(_eth);
+    function setETHAddress(address _weth) external onlyOwner {
+        wETH = IERC20(_weth);
     }
 
     function setUSDTAddress(address _usdt) external onlyOwner {
@@ -147,7 +147,7 @@ contract Lending is Ownable {
         return usdtBorrowDetails[msg.sender];
     }
 
-    function getWETHLatestPrice() public view returns (uint80) {
+    function getWETHLatestPrice() public view returns (uint256) {
         (
             uint80 roundId,
             int256 price,
@@ -155,10 +155,11 @@ contract Lending is Ownable {
             uint256 updatedAt,
             uint80 answeredInRound
         ) = wETHPriceFeed.latestRoundData();
-        return answeredInRound;
+        uint256 finalAnswer = uint256(price);
+        return finalAnswer;
     }
 
-    function getMaticLatestPrice() public view returns (uint80) {
+    function getMaticLatestPrice() public view returns (uint256) {
         (
             uint80 roundId,
             int256 price,
@@ -166,7 +167,8 @@ contract Lending is Ownable {
             uint256 updatedAt,
             uint80 answeredInRound
         ) = maticPriceFeed.latestRoundData();
-        return answeredInRound;
+        uint256 finalAnswer = uint256(price);
+        return finalAnswer;
     }
 
     receive() external payable {}
