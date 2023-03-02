@@ -126,3 +126,73 @@ describe("Lending: Depositing WETH", function () {
     ).to.be.equal(depositAmount);
   });
 });
+
+// describe("Lending: Withdrawing MATIC", function () {
+//   async function fixture() {
+//     const [deployer, user1, user2] = await ethers.getSigners();
+
+//     const Lending = await ethers.getContractFactory("Lending");
+//     const lending = await Lending.deploy();
+//     await lending.deployed();
+
+//     const amountOfToken = ethers.utils.parseEther("1000");
+//     const depositAmount = ethers.utils.parseEther("100");
+
+//     const WETH = await ethers.getContractFactory("WETH");
+//     const weth = await WETH.deploy();
+//     await weth.deployed();
+
+//     await weth.connect(user1).mint(amountOfToken);
+//     await weth.connect(user1).approve(lending.address, amountOfToken);
+//     await lending.connect(deployer).setETHAddress(weth.address);
+
+//     const Matic = await ethers.getContractFactory("MATIC");
+//     const matic = await Matic.deploy();
+//     await matic.deployed();
+
+//     await matic.connect(user1).mint(amountOfToken);
+//     await matic.connect(user1).approve(lending.address, amountOfToken);
+//     await lending.connect(deployer).setMaticAddress(matic.address);
+
+//     const USDT = await ethers.getContractFactory("USDT");
+//     const usdt = await USDT.deploy();
+//     await usdt.deployed();
+
+//     await usdt.connect(user1).mint(amountOfToken);
+//     await usdt.connect(user1).approve(lending.address, amountOfToken);
+//     await lending.connect(deployer).setUSDTAddress(usdt.address);
+
+//     await lending.connect(user1).depositWETH({ value: depositAmount });
+
+//     return {
+//       deployer,
+//       user1,
+//       user2,
+//       lending,
+//       weth,
+//       matic,
+//       usdt,
+//       amountOfToken,
+//       depositAmount,
+//     };
+//   }
+
+//   it("Should return the value in USD of the WETH", async function () {
+//     const { lending } = await loadFixture(fixture);
+
+//     const value = await lending.getWETHLatestPrice();
+//     console.log(value);
+//   });
+
+//   // it("Should borrow Matic", async function () {
+//   //   const { deployer, user1, lending, matic, depositAmount } =
+//   //     await loadFixture(fixture);
+
+//   //   const collateralAmount = await lending
+//   //     .connect(user1)
+//   //     .calculateCollateral(depositAmount);
+//   //   await lending.connect(user1).borrowMatic(collateralAmount);
+
+//   //   expect(await matic.balanceOf(user1.address)).to.be.equal(depositAmount);
+//   // });
+// });
