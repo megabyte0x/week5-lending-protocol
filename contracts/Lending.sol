@@ -86,7 +86,7 @@ contract Lending is Ownable {
         emit WETHDeposited(msg.sender, value);
     }
 
-    function borrowMatic(uint256 amount) external payable {
+    function borrowMatic(uint256 amount) external {
         WEthData memory _ethData = wethDepositDetails[msg.sender];
         uint256 amountValueInUSD = amount * getMaticLatestPrice();
         uint256 collateralValueInUSD = _ethData.collateralAmountUnclaimed *
@@ -106,7 +106,7 @@ contract Lending is Ownable {
         matic.transferFrom(address(this), msg.sender, amount);
     }
 
-    function borrowUSDT(uint256 amount) external payable {
+    function borrowUSDT(uint256 amount) external {
         WEthData memory _wethData = wethDepositDetails[msg.sender];
         uint256 collateralValueInUSD = _wethData.collateralAmountUnclaimed *
             getWETHLatestPrice();
@@ -155,7 +155,7 @@ contract Lending is Ownable {
             uint256 updatedAt,
             uint80 answeredInRound
         ) = wETHPriceFeed.latestRoundData();
-        uint256 finalAnswer = uint256(price);
+        uint256 finalAnswer = uint256((price * 10 ** 3) / 10 ** 12);
         return finalAnswer;
     }
 
@@ -167,7 +167,7 @@ contract Lending is Ownable {
             uint256 updatedAt,
             uint80 answeredInRound
         ) = maticPriceFeed.latestRoundData();
-        uint256 finalAnswer = uint256(price);
+        uint256 finalAnswer = uint256((price * 10 ** 3) / 10 ** 12);
         return finalAnswer;
     }
 
